@@ -18,7 +18,7 @@ Abstract
 
    This document describes a mechanism for link-state routing protocols
    to prevent local transient forwarding loops in case of link failure.
-   This mechanism proposes a two-steps convergence by introducing a
+   This mechanism proposes a two-step convergence by introducing a
    delay between the convergence of the node adjacent to the topology
    change and the network wide convergence.
 
@@ -26,8 +26,8 @@ Abstract
    planned maintenance or when fast reroute protects the traffic between
    the link failure time and the IGP convergence.
 
-   The proposed mechanism will be limited to the link down event in
-   order to keep simplicity.
+   The proposed mechanism is limited to the link down event in 
+   order to keep the mechanism simple.
 
    Simulations using real network topologies have been performed and
    show that local loops are a significant portion (>50%) of the total
@@ -124,8 +124,8 @@ Internet-Draft                 uloop-delay                     June 2017
 
    Micro-forwarding loops and some potential solutions are well
    described in [RFC5715].  This document describes a simple targeted
-   mechanism that solves micro-loops that are local to the failure;
-   based on network analysis, these are a significant portion of the
+   mechanism that prevents micro-loops that are local to the failure.
+   Based on network analysis, local failure make up a significant portion of the
    micro-forwarding loops.  A simple and easily deployable solution for
    these local micro-loops is critical because these local loops cause
    some traffic loss after a fast-reroute alternate has been used (see
@@ -301,6 +301,64 @@ Internet-Draft                 uloop-delay                     June 2017
    updates after the IGP convergence may allow to keep the fast-reroute
    path until the neighbors have converged and preserves the customer
    traffic.
+   
+   ==============
+[CB]  I find the examples presented in section 1 and section 2.1 to 
+be confusing.  The conclusion drawn in the last paragraph of section 
+2.1 does not seem to follow from these examples.
+
+Section 1 (figure 1) shows an example of micro-loops occuring when shortest
+path forwarding is used and the metrics are such that LFA and rLFA 
+produce no backup paths from the PLR.  
+
+Section 2.1 (figure 2) also shows an example of micro-loops occuring when 
+shortest path forwarding is used and the metrics are such that LFA and rLFA 
+produce no backup paths from the PLR.  However, in this example, 
+a one-hop RSVP tunnel is provisioned to provide link protection for one of
+the links.  However, even with this one-hop RSVP tunnel the example
+demonstrates that micro-loops can occur.
+
+The last paragraph asserts that:
+"The issue described here is completely independent of the fast-
+reroute mechanism involved (TE FRR, LFA/rLFA, MRT ...)."
+
+There are two problems with this assertion.
+
+Problem 1) I don't think that the assertion is correct for RSVP TE-FRR in general.
+
+For classical RSVP TE-FRR, there would be an RSVP-signalled LSP from S to D.  
+Before the failure of the link C-B, this LSP would follow the path 
+S-E-C-B-A-D.  Immediately after the failure of link C-B, the LSP would
+follow the path S-E-C-E-A-B-A-D using the bypass LSP at C.  Once S is 
+made aware of the failure.  S will resignal the LSP to take the path S-E-A-D.  
+At no time would looping occur.  
+   
+I assume that it wasn't the initial intention to claim that RSVP TE-FRR suffers from
+micro-looping, but the text currently reads that way.  The assertion of the last
+paragraph should be qualified to talk about how microloops will still affect traffic 
+forwarded hop-by-hop over links protected with one-hop RSVP-signalled LSPs.
+
+Problem 2) The assertion may be correct for LFA/rLFA and MRT, but it has not 
+been demonstrated with the examples provided.  I think it may instead be
+the case that the assertion nay not be true for local LFA in some circumstances.
+In particular, if traffic to a given destination can be protected for a given 
+failure by the PLR using a local LFA that is the same as the post convergence
+path, then that traffic will not be subject to microloops.
+
+Perhaps the overall intention of the example in figure 2 using 
+links protected with one-hop RSVP-signalled LSPs was to say that no 
+matter how much flexibility you give yourself in building a backup path
+from the PLR, if the PLR stops using the backup path before other routers
+stop sending traffic to the PLR, then you can still have forwarding loops.
+However, I think the complexity and detail of the example using one-hop 
+RSVP-signalled LSPs ends up confusing the matter.
+
+The text should either work more systematically through examples to 
+substantiate the assertion, or the assertion should be scaled back.  
+Regardless, the assertion needs to be clarified with respect to RSVP-TE FRR. 
+
+==============     
+
 
 2.2.  Network congestion
 
@@ -317,17 +375,17 @@ Internet-Draft                 uloop-delay                     June 2017
    fails, a transient forwarding loop may appear between S and B for
    destination D.  The traffic on the S-B link will constantly increase
    due to the looping traffic to D.  Depending on the TTL of the
-   packets, the traffic rate destinated to D and the bandwidth of the
-   link, the S-B link may be congested in few hundreds of milliseconds
-   and will stay overloaded until the loop is solved.
+   packets, the traffic rate destined to D, and the bandwidth of the
+   link, the S-B link may become congested in a few hundred milliseconds
+   and will stay congested until the loop is eliminated.
 
    The congestion introduced by transient forwarding loops is
-   problematic as it is impacting traffic that is not directly concerned
+   problematic as it can affect traffic that is not directly affected
    by the failing network component.  In our example, the congestion of
    the S-B link will impact some customer traffic that is not directly
-   concerned by the failure: e.g.  A to B, F to B, E to B.  Some class
-   of services may be implemented to mitigate the congestion, but some
-   traffic not directly concerned by the failure would still be dropped
+   affected by the failure: e.g.  A to B, F to B, E to B.  Class
+   of service may mitigate the congestion for some traffic.  However, some
+   traffic not directly affected by the failure will still be dropped
 
 
 
@@ -337,26 +395,29 @@ Litkowski, et al.       Expires December 23, 2017               [Page 6]
 Internet-Draft                 uloop-delay                     June 2017
 
 
-   as a router is not able to identify the looping traffic from the
+   as a router is not able to distinguish the looping traffic from the
    normally forwarded traffic.
 
 3.  Overview of the solution
 
    This document defines a two-step convergence initiated by the router
-   detecting the failure and advertising the topological changes in the
+   detecting a failure and advertising the topological changes in the
    IGP.  This introduces a delay between the convergence of the local
    router and the network wide convergence.
 
-   The proposed solution is kept limited to local link down events for
-   simplicity reason.
-
-   This ordered convergence, is similar to the ordered FIB proposed
-   defined in [RFC6976], but limited to only a "one hop" distance.  As a
-   consequence, it is simpler and becomes a local only feature not
-   requiring interoperability; at the cost of only covering the
-   transient forwarding loops involving this local router.  The proposed
-   mechanism also reuses some concept described in
+   The proposed solution is limited to local link down events in 
+   order to keep the solution simple.
+   
+   This ordered convergence is similar to the ordered FIB proposed
+   defined in [RFC6976], but it is limited to only a "one hop" distance.  As a
+   consequence, it is simpler and becomes a local feature that does not
+   require interoperability.  This benefit comes at the expense of only eliminating
+   transient forwarding loops involving the local router.  The proposed
+   mechanism also reuses some concepts described in
    [I-D.ietf-rtgwg-microloop-analysis] with some limitations.
+   
+   [CB] "with some limitations" is confusing here.  I would either explain
+   the limitations, or delete the phrase.
 
 4.  Specification
 
@@ -400,7 +461,7 @@ Internet-Draft                 uloop-delay                     June 2017
 
    1.  The Up/Down event is notified to the IGP.
 
-   2.  The IGP processes the notification and postpones the reaction in
+   2.  The IGP processes the notification and postpones the reaction for
        LSP_GEN_TIMER msec.
 
    3.  Upon LSP_GEN_TIMER expiration, the IGP updates its LSP/LSA and
@@ -410,7 +471,7 @@ Internet-Draft                 uloop-delay                     June 2017
 
    5.  Upon SPF_DELAY expiration, the SPF is computed, then the RIB and
        FIB are updated.
-
+	   
 4.3.  Local events
 
    The mechanism described in this document assumes that there has been
@@ -420,19 +481,19 @@ Internet-Draft                 uloop-delay                     June 2017
    Section 4.2).
 
    To determine if the mechanism can be applicable or not, an
-   implementation SHOULD implement a logic to correlate the protocol
+   implementation SHOULD implement logic to correlate the protocol
    messages (LSP/LSA) received during the SPF scheduling period in order
    to determine the topology changes that occured.  This is necessary as
    multiple protocol messages may describe the same topology change and
    a single protocol message may describe multiple topology changes.  As
    a consequence, determining a particular topology change MUST be
    independent of the order of reception of those protocol messages.
-   How the logic works is let to implementation details.
+   How the logic works is left to the implementation.
 
    Using this logic, if an implementation determines that the associated
    topology change is a single local link failure, then the router MAY
    use the mechanism described in this document, otherwise the standard
-   IP convergence MUST be used.
+   IP convergence MUST used.
 
    Example:
 
@@ -441,8 +502,9 @@ Internet-Draft                 uloop-delay                     June 2017
    A ---- B -------- C ------ D
 
 
-
-
+==========
+[CB]  It would be good to number this figure.
+==========
 
 Litkowski, et al.       Expires December 23, 2017               [Page 8]
 
@@ -453,8 +515,9 @@ Internet-Draft                 uloop-delay                     June 2017
    updates its local LSP/LSA describing the link B->C as down, C does
    the same, and both start flooding their updated LSP/LSAs.  During the
    SPF_DELAY period, B and C learn all the LSPs/LSAs to consider.  B
-   sees that C is flooding as down a link where B is the other end and
-   that B and C are describing the same single event.  Since B receives
+   sees that C is flooding an advertisement that indicates that a link 
+   is down, and B is the other end of that link.  B determines that 
+   B and C are describing the same single event.  Since B receives
    no other changes, B can determine that this is a local link failure
    and may decide to activate the mechanism described in this document.
 
@@ -463,14 +526,34 @@ Internet-Draft                 uloop-delay                     June 2017
    Upon an adjacency/link down event, this document introduces a change
    in step 5 (Section 4.2) in order to delay the local convergence
    compared to the network wide convergence: the node SHOULD delay the
-   forwarding entry updates by ULOOP_DELAY_DOWN_TIMER.  Such delay
+   forwarding entry updates by ULOOP_DELAY_DOWN_TIMER.  
+ 
+=========
+[CB]  It would be good to write out exactly what the modified version of step 5
+looks like so there is no confusion. Something like:
+
+5.  Upon SPF_DELAY timer expiration, the SPF is computed.  If the condition
+of a single local link-down event have been met, then an update of the 
+RIB and the FIB is scheduled in ULOOP_DELAY_DOWN_TIMER msecs.  Otherwise,
+the RIB and FIB update is scheduled immediately.
+
+=========
+   
+   Such a delay
    SHOULD only be introduced if all the LSDB modifications processed are
    only reporting a single local link down event (Section 4.3).  If a
    subsequent LSP/LSA is received/updated and a new SPF computation is
    triggered before the expiration of ULOOP_DELAY_DOWN_TIMER, then the
    same evaluation SHOULD be performed.
 
-   As a result of this addition, routers local to the failure will
+=========   
+[CB] What should one do if the evaluation of a subsequent LSP/LSA fails 
+at this point?  Do you go ahead and update the FIB with the forwarding 
+entries that you were waiting to do?  Or do you do a new SPF with the 
+new information?  Or is it up to the implementation? 
+=========
+
+   As a result of this delay, routers local to the failure will
    converge slower than remote routers.  Hence it SHOULD only be done
    for a non-urgent convergence, such as for administrative de-
    activation (maintenance) or when the traffic is protected by fast-
@@ -478,8 +561,8 @@ Internet-Draft                 uloop-delay                     June 2017
 
 5.  Applicability
 
-   As previously stated, the mechanism only avoids the forwarding loops
-   on the links between the node local to the failure and its neighbor.
+   As previously stated, this mechanism only avoids the forwarding loops
+   on the links between the node local to the failure and its neighbors.
    Forwarding loops may still occur on other links.
 
 5.1.  Applicable case: local loops
@@ -507,7 +590,7 @@ Internet-Draft                 uloop-delay                     June 2017
 
    By implementing the mechanism defined in this document on C, when the
    C-E link fails, C delays the update of its forwarding entry to F, in
-   order to let some time for D to converge.  FRR keeps protecting the
+   order to allow some time for D to converge.  FRR on C keeps protecting the
    traffic during this period.  When the timer expires on C, its
    forwarding entry to F is updated.  There is no transient forwarding
    loop on the link C-D.
@@ -530,7 +613,7 @@ Internet-Draft                 uloop-delay                     June 2017
 
    By implementing the mechanism defined in this document on C, when the
    link C-F fails, C delays the update of its forwarding entry to K,
-   letting time for D to converge.  When the timer expires on C, its
+   allowing time for D to converge.  When the timer expires on C, its
    forwarding entry to F is updated.  There is no transient forwarding
    loop between C and D.  However, a transient forwarding loop may still
    occur between D and A.  In this scenario, this mechanism is not
@@ -538,7 +621,7 @@ Internet-Draft                 uloop-delay                     June 2017
    does not create additional traffic loss.  Besides, in some cases
    -such as when the nodes update their FIB in the following order C, A,
    D, for example because the router A is quicker than D to converge-
-   the mechanism may still avoid the forwarding loop that was occurring.
+   the mechanism may still avoid the forwarding loop that would have otherwise occurred.
 
 6.  Simulations
 
@@ -585,7 +668,7 @@ Internet-Draft                 uloop-delay                     June 2017
       nexthop N) as a loop if upon link A-B failure, the flow from a
       router S upstream from A (A could be considered as PLR also) to D
       may loop due to convergence time difference between S and one of
-      his neighbor N.
+      his neighbors N.
 
    o  We evaluate the number of potential loop tuples in normal
       conditions.
@@ -594,19 +677,19 @@ Internet-Draft                 uloop-delay                     June 2017
       topological input but taking into account that S converges after
       N.
 
-   o  The gain is how much loops (remote and local) we succeed to
+   o  The gain is how many loops (both remote and local) we succeed to
       suppress.
 
    On topology 1, 71% of the transient forwarding loops created by the
    failure of any link are prevented by implementing the local delay.
-   The analysis shows that all local loops are obviously solved and only
-   remote loops are remaining.
+   The analysis shows that all local loops are prevented and only
+   remote loops remain.
 
 7.  Deployment considerations
 
    Transient forwarding loops have the following drawbacks:
 
-   o  They limit FRR efficiency: even if FRR is activated in 50msec, as
+   o  They limit FRR efficiency: even if FRR is activated within 50msec, as
       soon as PLR has converged, the traffic may be affected by a
       transient loop.
 
@@ -617,15 +700,15 @@ Litkowski, et al.       Expires December 23, 2017              [Page 11]
 Internet-Draft                 uloop-delay                     June 2017
 
 
-   o  They may impact traffic not directly concerned by the failure (due
+   o  They may impact traffic not directly affected by the failure (due
       to link congestion).
 
    This local delay proposal is a transient forwarding loop avoidance
    mechanism (like OFIB).  Even if it only addresses local transient
    loops, the efficiency versus complexity comparison of the mechanism
    makes it a good solution.  It is also incrementally deployable with
-   incremental benefits, which makes it an attractive option for both
-   vendors to implement and Service Providers to deploy.  Delaying the
+   incremental benefits, which makes it an attractive option both for 
+   vendors to implement and for service providers to deploy.  Delaying the
    convergence time is not an issue if we consider that the traffic is
    protected during the convergence.
 
@@ -923,9 +1006,10 @@ Internet-Draft                 uloop-delay                     June 2017
 
 8.3.  Aborting local delay
 
-   The table below describes the events and associating timing that
-   happens on router C and E when link B-C goes down, in addition F-X
-   link will fail during local delay run.  C will first apply local
+   The table below describes the events and associated timing that
+   happens on router C and E when link B-C goes down.  In addition, we 
+   consider what happens when the F-X
+   link fails during local delay of the FIB update.  C will first apply the local
    delay, but when the new event happens, it will fall back to the
    standard convergence mechanism without delaying route insertion
    anymore.  In this example, we consider a ULOOP_DELAY_DOWN_TIMER
@@ -1128,10 +1212,10 @@ Internet-Draft                 uloop-delay                     June 2017
 
    This document does not introduce any change in term of IGP security.
    The operation is internal to the router.  The local delay does not
-   increase the attack vector as an attacker could only trigger this
+   increase the number of attack vectors as an attacker could only trigger this
    mechanism if he already has be ability to disable or enable an IGP
-   link.  The local delay does not increase the negative consequences as
-   if an attacker has the ability to disable or enable an IGP link, it
+   link.  The local delay does not increase the negative consequences.
+   If an attacker has the ability to disable or enable an IGP link, it
    can already harm the network by creating instability and harm the
    traffic by creating forwarding packet loss and forwarding loss for
    the traffic crossing that link.
