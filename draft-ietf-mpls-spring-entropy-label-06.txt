@@ -130,6 +130,12 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
    stacked MPLS tunnels as described in
    [I-D.ietf-spring-segment-routing] where deeper label stacks are more
    prevalent.
+   
+   ================
+   [CB] The above statement is fairly mysterious. It is not clear
+   what document RFC7325 was clarifying in the first place.   The statement 
+   should either be explained in more detail here, or deleted.  
+   ================
 
    Entropy label (EL) [RFC6790] is a technique used in the MPLS data
    plane to provide entropy for load-balancing.  When using LSP
@@ -144,7 +150,8 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
    implementations when applying [RFC6790] to deeper label stacks.
    Options that were considered to arrive at the recommended solution
    are documented for historical purposes in Section 10.
-
+   
+   
 1.1.  Requirements Language
 
    The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
@@ -209,7 +216,7 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
 
                   Figure 1: Traffic engineering use-case
 
-   Traffic-engineering (TE) is one of the applications of MPLS and is
+   Traffic-engineering is one of the applications of MPLS and is
    also a requirement for source routed tunnels with label stacks
    [RFC7855].  Consider the topology shown in Figure 1.  The LSR S
    requires data to be sent to LSR D along a traffic-engineered path
@@ -301,6 +308,10 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
 
                     Figure 2: Label stacks with ELI/EL
 
+	===========
+	[CB] Make a direct reference to Figure 2 instead of in the figure below.
+	=============	
+					
    In the figure below, we consider the displayed packets received on a
    router interface.  We consider also a single ERLD value for the
    router.
@@ -339,6 +350,12 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
 
    o  MUST be entropy label capable and, as a consequence, MUST apply
       all the procedures defined in [RFC6790].
+	  
+	  =================
+	  [CB] This text here should clarify exactly what procedures in RFC6790
+	  must be applied.  6790 also defines signalling procedure which 
+	  presumably don't apply here.
+	  =================
 
    o  MUST be able to read an ELI/EL which is located within its ERLD
       value.
@@ -419,14 +436,18 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
 
    The binding SID allows binding a segment identifier to an existing
    LSP.  As examples, the binding SID can represent an RSVP-TE tunnel,
-   an LDP path (through the mapping server advertisement), a SPRING
-   path...  Each LSP associated with a binding SID has its own entropy
+   an LDP path (through the mapping server advertisement), or a SPRING
+   path.  Each LSP associated with a binding SID has its own entropy
    label capability.
 
    In the figure 3, if we consider that:
 
    o  P6, PE2, P10, P11, P12 are pure LDP routers.
-
+   
+   ============
+   [CB] It seems like P13 should also be a pure LDP router for simplicity.
+   ============
+   
    o  PE1, P1, P2, P3, P4, P7, P8, P9 are pure SPRING routers.
 
    o  P5 is running SPRING and LDP.
@@ -458,8 +479,12 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
               +----+                   +----+   +----+
                                        SPRING    LDP
 
-   In term of packet forwarding, by learning the MS advertisement from
-   PE5, PE1 imposes a label 1020 to an IP packet destinated to PE2.
+   In terms of packet forwarding, by learning the MS advertisement from
+   =========
+   [CB] Better to say "mapping server" instead of MS here because there
+   is also an MSD in this document with a completely different meaning.
+   =========
+   P5, PE1 imposes a label 1020 to an IP packet destinated to PE2.
    SPRING routers along the shortest path to PE2 will switch the traffic
    until it reaches P5 which will perform the LSP stitching.  P5 will
    swap the SPRING label 1020 to the LDP label 20 advertised by the
@@ -509,7 +534,16 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
 
 7.1.  Overview
 
-   The solution described in this section follows [RFC6790].  Within a
+   The solution described in this section follows [RFC6790]. 
+================
+[CB] It is not clear this sentence means.  Does the solution follow 
+some aspect of RFC6790? Or does the description of the solution 
+follow the method used to describe the solution RFC6790?  What aspect of 
+RFC6790 is being followed?  Either explain this more clearly, or 
+delete the sentence.
+================
+
+   Within a
    SPRING path, a node may be ingress, egress, transit (regarding the
    entropy label processing described in [RFC6790]), or it can be any
    combination of those.  For example:
@@ -534,6 +568,14 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
    of an MPLS packet that it receives, then it would lead to poor load-
    balancing at that LSR.  Hence an ELI/EL pair MUST be within the ERLD
    of the LSR in order for the LSR to use the EL during load-balancing.
+   
+   =====================
+   [CB]  It is not clear that the MUST above should be a capital MUST.
+   Does this mean that an EL that is outside of the advertised ERLD of 
+   a router MUST NOT be used for load-balancing?  This seems wrong given
+   that this spec allows for ERLD to be the minimum of the ERLD of 
+   different line cards.
+   =====================
 
    Adding a single ELI/EL pair for the entire SPRING path may lead also
    to poor load-balancing as well because the EL/ELI may not occur
@@ -552,7 +594,7 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
    The ELs among multiple <ELI, EL> pairs inserted in the stack MAY be
    the same or different.  The LSR that inserts <ELI, EL> pairs MAY have
    limitations on the number of such pairs that it can insert and also
-   the depth at which it can insert them.  If due to limitations, the
+   the depth at which it can insert them.  If, due to limitations, the
 
 
 
@@ -569,6 +611,14 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
 
 7.1.1.  Example 1
 
+=============
+[CB] I would try to come up with a descriptive section title 
+instead of "Example 1".  It looks like it is a caption 
+for Figure 4 and you don't know if you should expect to see
+the figure referred to as "example 1" or "figure 4".
+proposed title
+"Example where ingress node has the ability to push deep label stacks"
+=============
 
                         ECMP          LAG           LAG
       PE1 --- P1 --- P2 --- P3 --- P4 --- P5 --- P6 --- PE2
@@ -627,6 +677,12 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
    necessary label imposition capacity.
 
 7.1.2.  Example 2
+=============
+[CB] I would try to come up with a descriptive section title 
+instead of "Example 2". 
+such as
+"Example where ingress node does not have the ability to push deep label stacks"
+=============
 
 
                       ECMP          LAG           ECMP         ECMP
@@ -678,7 +734,7 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
 
    An implementation SHOULD try to maximize the load-balancing where
    multiple ECMP paths are available and minimize the number of EL/ELIs
-   that need to be inserted.  In case of trade-off, an implementation
+   that need to be inserted.  In case of a trade-off, an implementation
    MAY provide flexibility to the operator to select the criteria to be
    considered when placing EL/ELIs or the sub-objective for which to
    optimize.
@@ -695,7 +751,7 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
 7.2.1.  ERLD value
 
    As mentioned in Section 7.1, the ERLD value is an important parameter
-   to consider when inserting ELI/EL as if an ELI/EL does not fall
+   to consider when inserting ELI/EL.  If an ELI/EL does not fall
    within the ERLD of a node on the path, the node will not be able to
    load-balance the traffic efficiently.
 
@@ -729,7 +785,7 @@ Kini, et al.            Expires November 4, 2017               [Page 13]
 Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
 
 
-   the ERLD associated to label Node_P9 would be the minimum ERLD
+   the ERLD associated with label Node_P9 would be the minimum ERLD
    between nodes {P2,P3,P4 ..., P8}.  If an implementation does not
    support the computation of minimum ERLD, it should consider the ERLD
    of P2 (starting node that will forward based on the Node_P9 label).
@@ -754,12 +810,21 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
 
    Let's consider a path from PE1 to PE2 using the following stack
    pushed by PE1: {Service_label, Adj_PE2P9, Node_P9, Adj_P1P2}.
+   
+   ================
+   [CB] Add a referecence to figure 6.
+   =================
 
    If, for example, PE1 is limited to pushing 6 labels, it can add a
    single ELI/EL within the label stack.  An operator may want to favor
    a placement that would allow load-balancing along the Node-SID path.
    In the figure above, P3 which is along the Node-SID path requires
    load-balancing on two equal-cost paths.
+   
+   ===========
+   [CB] It is not clear to me why P3 in figure 6 requires load-balancing.
+   P3-P4-P5 is the shortest path with no ECMP.
+   ===========
 
    An implementation may try to evaluate if load-balancing is really
    required within a node segment path.  This could be done by running
@@ -773,6 +838,12 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
    ELI.
 
 7.2.2.2.  Adjacency-SID representing an ECMP bundle
+
+=========
+[CB] If this is referring to adj-sets, then they are necessarily ECMP 
+because there is no requirement that the members of the adj-set have
+the same IGP cost.
+=========
 
    When an adjacency segment representing an ECMP bundle is used within
    a label stack, an implementation can deduce that load-balancing is
@@ -801,8 +872,8 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
    Readers should note that an adjacency segment representing a single
    IP link may require load-balancing.  This is the case when a LAG (L2
    bundle) is implemented between two IP nodes and the L2 bundle SR
-   extensions [I-D.ietf-isis-l2bundles] are not implemented.  In such
-   case, it may be interesting to keep the possibility to insert an EL/
+   extensions [I-D.ietf-isis-l2bundles] are not implemented.  In such a
+   case, it may be useful to insert an EL/
    ELI in a readable position for the LSR advertising the label
    associated with the adjacency segment.
 
@@ -861,19 +932,28 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
 7.2.5.  Combining criteria
 
    An implementation can combine multiple criteria to determine the best
-   EL/ELIs placement.  But combining too much criteria may lead to
+   EL/ELIs placement.  However, combining too many criteria may lead to
    implementation complexity and high control plane resource
-   consumption.  Each time the network topology changes, a new
+   consumption.  
+   
+   ======
+   [CB] "high control plane resource consumption" kind of implies an 
+   increase in advertisements and messaging.  If that is not the case,
+   then perhaps is is better to just say "implementation complexity 
+   and high resource consumption".   
+   ======
+   
+   Each time the network topology changes, a new
    evaluation of the EL/ELI placement will be necessary for each
    impacted LSPs.
 
-8.  A simple algorithm example
+8.  A simple example algorithm
 
-   A simple implementation can only take into account ERLD when placing
-   ELI/EL while keep minimizing the number of EL/ELIs inserted and
-   maximizing the number of LSRs that can load-balance.
-
-   The algorithm example is based on the following considerations:
+   A simple implementation might take into account ERLD when placing
+   ELI/EL while trying to minimize the number of EL/ELIs inserted and
+   trying to maximize the number of LSRs that can load-balance.
+   
+   The example algorithm is based on the following considerations:
 
    o  An LSR that is limited in the number of <ELI, EL> pairs that it
       can insert SHOULD insert such pairs deeper in the stack.
@@ -885,7 +965,7 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
    o  An LSR should try to insert the minimum number of such pairs while
       trying to satisfy the above criteria.
 
-   The pseudocode of the example is shown below.
+   The pseudocode of the example algorithm is shown below.
 
 
 
@@ -919,7 +999,7 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
 
 9.  Deployment Considerations
 
-   As long as LSR node dataplane capabilities with be limited (number of
+   As long as LSR node dataplane capabilities are limited (number of
    labels that can be pushed, or number of labels that can be
    inspected), hop-by-hop load-balancing of SPRING encapsulated flows
    will require trade-offs.
@@ -954,18 +1034,24 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
 
 
    In future, hardware and software capacity may increase dataplane
-   capabilities and may be remove some of these limits, increasing load-
+   capabilities and may be remove some of these limitations, increasing load-
    balancing capability using entropy labels.
 
 10.  Options considered
 
    Different options that were considered to arrive at the recommended
    solution are documented in this section.
+   
+   ==============
+   [CB] It would be good to include some verbiage about this information being 
+   provided for historical purposes. That is already in the introduction , but 
+   it wouldn't hurt to put it here as well.
+   ==============
 
 10.1.  Single EL at the bottom of the stack of tunnels
 
    In this option, a single EL is used for the entire label stack.  The
-   source LSR S encodes the entropy label (EL) at the bottom of the
+   source LSR S encodes the entropy label at the bottom of the
    label stack.  In the example described in Section 3, it will result
    in the label stack at LSR S to look like {L_N-P3, L_A-L1, L_N-D, ELI,
    EL} {remaining packet header}.  Note that the notation in [RFC6790]
@@ -976,15 +1062,30 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
    header when making forwarding decisions.  In the example described in
    Section 3, the LSR P1 would load-balance traffic poorly on the
    parallel links L3 and L4 since the EL is below the ERLD of the packet
-   received by P1.  A load-balanced network design using this approach
+   received by P1. 
+	============
+	[CB] This is confusing for two reasons.  First, as far as I can tell, the text
+	in section 3 doesn't say what the ERLD of P1 is.  Second, the sentence refers
+	to the ERLD of the packet, but it seems like it would be clearer to talk
+    about the ERLD of P1.
+	
+	============
+
+   A load-balanced network design using this approach
    must ensure that all intermediate LSRs have the capability to
    traverse the maximum label stack depth as required for the
    application that uses source routed stacking.
+   
+   =========
+   [CB] "traverse" is confusing here.  perhaps just "read".
+   =========
 
    In the case where the hardware is capable of pushing a single <ELI,
    EL> pair at any depth, this option is the same as the recommended
    solution in Section 7.
-
+   ==========
+   [CB]  This sentence doesn't make sense to me.  Either clarify it or delete it.
+   ==========
    This option was rejected since there exist a number of hardware
    implementations which have a low maximum readable label depth.
    Choosing this option can lead to a loss of load-balancing using EL in
@@ -1016,11 +1117,14 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
    overhead and potential MTU issues of deep label stacks should be
    considered in the network design.
 
-   In the case where the RLD is the minimum value (3) for all LSRs, all
+   In the case where the ERLD is the minimum value (3) for all LSRs, all
    LSRs are EL capable and the LSR that is inserting <ELI, EL> pairs has
    no limit on how many it can insert then this option is the same as
    the recommended solution in Section 7.
-
+   ===============
+   [CB]  I find this comparison to the solution in section 7 to be
+   confusing rather than helpful.  Perhaps it needs to be rephrased.
+   ===============
    This option was rejected due to the existence of hardware
    implementations that can push a limited number of labels on the label
    stack.  Choosing this option would result in a hardware requirement
@@ -1096,7 +1200,7 @@ Internet-Draft      Entropy Labels for SPRING tunnels           May 2017
    encoded label stack would be {L_N-P3, ELI, EL, L_A-L1, L_N-D, ELI,
    EL} where all the ELs would typically have the same value.
 
-   In the case where the RLD has different values along the path and the
+   In the case where the ERLD has different values along the path and the
    LSR that is inserting <ELI, EL> pairs has no limit on how many pairs
    it can insert, and it knows the appropriate positions in the stack
    where they should be inserted, this option is the same as the
